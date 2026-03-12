@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hephaestus // Advanced Engineering Forge</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#020203',
+                        surface: '#0A0A0C',
+                        primary: '#3b82f6',
+                        accent: '#8b5cf6',
+                        border: '#1A1A1E',
+                        'card-bg': '#0D0D10'
+                    },
+                    fontFamily: { 
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root { color-scheme: dark; }
+        body { background-color: #020203; color: #F4F4F5; font-family: 'Plus Jakarta Sans', sans-serif; margin: 0; height: 100vh; overflow: hidden; }
+        .mesh-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at 0% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 50%), radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 50%); z-index: -1; }
+        .sidebar { width: 280px; background: rgba(10, 10, 12, 0.8); backdrop-filter: blur(20px); border-right: 1px solid #1A1A1E; }
+        .nav-btn { display: flex; align-items: center; gap: 12px; padding: 14px 20px; margin: 4px 16px; border-radius: 12px; color: #71717A; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent; }
+        .nav-btn:hover { background: rgba(255, 255, 255, 0.03); color: #fff; }
+        .nav-btn.active { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.2); }
+        .main-content { flex: 1; overflow-y: auto; scroll-behavior: smooth; }
+        .feature-card { background: #0D0D10; border: 1px solid #1A1A1E; border-radius: 24px; padding: 40px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; position: relative; overflow: hidden; }
+        .feature-card:hover { border-color: #3b82f6; transform: translateY(-8px); background: #111115; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4); }
+        .btn-forge { background: #3b82f6; color: #fff; padding: 16px 32px; border-radius: 14px; font-weight: 800; font-size: 1rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 10px; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3); }
+        .btn-forge:hover:not(:disabled) { background: #2563eb; transform: translateY(-2px); }
+        .btn-forge:disabled { opacity: 0.5; cursor: not-allowed; }
+        .forge-input { background: #0A0A0C; border: 1px solid #1A1A1E; color: #fff; padding: 16px; border-radius: 14px; width: 100%; outline: none; transition: all 0.2s; }
+        .forge-input:focus { border-color: #3b82f6; background: #0D0D10; }
+        .dropzone { border: 2px dashed #1A1A1E; border-radius: 24px; background: rgba(10, 10, 12, 0.4); transition: all 0.3s ease; }
+        .dropzone:hover { border-color: #3b82f6; background: rgba(59, 130, 246, 0.02); }
+        .hidden { display: none !important; }
+        .format-chip { padding: 10px 20px; border-radius: 12px; border: 1px solid #1A1A1E; background: #0A0A0C; color: #71717A; cursor: pointer; transition: 0.2s; font-weight: 700; font-size: 0.8rem; }
+        .format-chip.active { border-color: #3b82f6; color: #fff; background: rgba(59, 130, 246, 0.1); }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #1A1A1E; border-radius: 10px; }
+    </style>
+</head>
+<body class="flex antialiased">
+    <div class="mesh-bg"></div>
+
+    <aside class="sidebar h-full shrink-0 hidden md:flex flex-col">
+        <div class="p-10 flex items-center gap-4">
+            <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl">
+                <i class="fas fa-bolt-lightning text-xl"></i>
+            </div>
+            <div class="flex flex-col">
+                <span class="text-xl font-extrabold tracking-tighter text-white">HEPHAESTUS</span>
+                <span class="text-[10px] font-black text-muted uppercase tracking-[0.3em]">Core v2.8</span>
+            </div>
+        </div>
+
+        <nav class="flex-1 mt-4">
+            <div onclick="switchView('home')" id="nav-home" class="nav-btn active"><i class="fas fa-layer-group w-5"></i> Dashboard</div>
+            <div onclick="switchView('pdf')" id="nav-pdf" class="nav-btn"><i class="fas fa-highlighter w-5"></i> PDF Highlights</div>
+            <div onclick="switchView('hf')" id="nav-hf" class="nav-btn"><i class="fas fa-file-signature w-5"></i> Lab Manual Forge</div>
+            <div onclick="switchView('llm')" id="nav-llm" class="nav-btn"><i class="fas fa-microchip w-5"></i> Context Engine</div>
+        </nav>
+    </aside>
+
+    <main class="main-content relative">
+        <div class="max-w-6xl mx-auto p-8 md:p-16 lg:p-24 min-h-screen">
+            
+            <!-- HOME -->
+            <section id="view-home" class="space-y-20 py-10">
+                <header class="max-w-3xl space-y-8">
+                    <h1 class="text-7xl md:text-9xl font-extrabold text-white leading-[0.9] tracking-tighter italic">FORGE <br/><span class="text-primary not-italic">REALITY.</span></h1>
+                    <p class="text-2xl text-muted font-medium">Surgical precision tools for engineering and research documentation.</p>
+                </header>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div onclick="switchView('pdf')" class="feature-card">
+                        <i class="fas fa-highlighter text-2xl text-primary mb-8 block"></i>
+                        <h3 class="text-2xl font-extrabold text-white mb-4">PDF Extraction</h3>
+                        <p class="text-muted">Extract highlighted signals into structured notes.</p>
+                    </div>
+                    <div onclick="switchView('hf')" class="feature-card">
+                        <i class="fas fa-file-signature text-2xl text-primary mb-8 block"></i>
+                        <h3 class="text-2xl font-extrabold text-white mb-4">Manual Forge</h3>
+                        <p class="text-muted">Inject headers, footers & page numbers to PDF/IPYNB.</p>
+                    </div>
+                    <div onclick="switchView('llm')" class="feature-card">
+                        <i class="fas fa-microchip text-2xl text-primary mb-8 block"></i>
+                        <h3 class="text-2xl font-extrabold text-white mb-4">Context Engine</h3>
+                        <p class="text-muted">Pack repos for AI analysis (HTML/MD/Compressed).</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PDF EXTRACTOR -->
+            <section id="view-pdf" class="hidden space-y-12">
+                <h2 class="text-5xl font-black text-white tracking-tighter uppercase italic">PDF Intelligence</h2>
+                <div class="dropzone p-24 text-center cursor-pointer" onclick="document.getElementById('pdf-input').click()">
+                    <input type="file" id="pdf-input" class="hidden" multiple accept=".pdf" onchange="onFilesSelected(this)" />
+                    <i class="fas fa-cloud-arrow-up text-4xl text-neutral-700 mb-6"></i>
+                    <p class="text-2xl font-black text-white">Target annotated PDFs</p>
+                </div>
+                <div id="pdf-queue" class="hidden">
+                    <div class="p-8 bg-surface rounded-[2rem] border border-border flex justify-between items-center">
+                        <span id="pdf-count" class="text-2xl font-black text-primary font-mono tracking-tighter">00 Files Ready</span>
+                        <button class="btn-forge" id="pdf-btn" onclick="executePDFExtraction()">EXEC_EXTRACTION</button>
+                    </div>
+                </div>
+                <div id="pdf-results" class="space-y-8"></div>
+            </section>
+
+            <!-- CONTEXT ENGINE -->
+            <section id="view-llm" class="hidden space-y-16 max-w-3xl mx-auto py-10">
+                <div class="text-center space-y-6">
+                    <div class="w-24 h-24 bg-gradient-to-br from-primary to-accent rounded-[2.5rem] flex items-center justify-center mx-auto text-white shadow-2xl"><i class="fas fa-brain text-4xl"></i></div>
+                    <h2 class="text-5xl font-black text-white tracking-tighter uppercase italic">Context Engine</h2>
+                </div>
+                <div class="p-12 bg-surface border border-border rounded-[3rem] space-y-10">
+                    <div class="dropzone p-12 text-center cursor-pointer" onclick="document.getElementById('zip-input').click()">
+                        <input type="file" id="zip-input" class="hidden" accept=".zip" onchange="onZipSelected(this)" />
+                        <p id="zip-label" class="text-xl font-black text-white uppercase font-mono">MOUNT_REPOSITORY (.ZIP)</p>
+                    </div>
+                    <div class="flex flex-col space-y-4">
+                        <label class="text-[10px] font-black text-primary uppercase tracking-widest text-center">Output Target Format</label>
+                        <div class="flex justify-center gap-3">
+                            <div class="format-chip active" id="fmt-html" onclick="setFmt('html')">HTML_VISUAL</div>
+                            <div class="format-chip" id="fmt-md" onclick="setFmt('md-friendly')">MARKDOWN_RAW</div>
+                            <div class="format-chip" id="fmt-cmp" onclick="setFmt('md-compressed')">COMPRESSED_MD</div>
+                        </div>
+                    </div>
+                    <button class="w-full btn-forge py-6 text-xl justify-center" id="llm-btn" onclick="executeLLMCompile()">INITIALIZE_COMPILATION</button>
+                </div>
+                <div id="llm-result" class="hidden glass p-10 rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-8 border-primary/20">
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black text-primary tracking-[0.4em] uppercase mb-2">Process Finalized</p>
+                        <h4 id="llm-name" class="text-2xl font-bold text-white truncate max-w-sm font-mono">CODE_PACK.FILE</h4>
+                    </div>
+                    <div class="flex gap-4">
+                        <a id="llm-preview" target="_blank" class="btn-forge bg-surface border border-border hover:bg-neutral-800">VIEW</a>
+                        <a id="llm-download" class="btn-forge">DOWNLOAD</a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MANUAL FORGE -->
+            <section id="view-hf" class="hidden space-y-12">
+                <h2 class="text-5xl font-black text-white tracking-tighter uppercase italic text-center">IPYNB / PDF Forge</h2>
+                <div class="grid lg:grid-cols-12 gap-10">
+                    <div class="lg:col-span-4 space-y-8">
+                        <div class="dropzone p-12 text-center cursor-pointer group" onclick="document.getElementById('hf-input').click()">
+                            <input type="file" id="hf-input" class="hidden" multiple accept=".pdf,.ipynb" onchange="onHFSelected(this)" />
+                            <i class="fas fa-file-circle-plus text-3xl text-neutral-700 mb-4 group-hover:text-primary transition-colors"></i>
+                            <p class="text-white font-black text-lg">MOUNT_TARGETS</p>
+                        </div>
+                        <div class="p-8 bg-surface border border-border rounded-[2rem] max-h-[300px] overflow-auto font-mono text-xs text-muted" id="hf-queue-list">>> Execution Buffer Empty</div>
+                    </div>
+                    <div class="lg:col-span-8 p-12 bg-card-bg border border-border rounded-[3rem] space-y-10">
+                        <div class="grid grid-cols-2 gap-8">
+                            <div class="space-y-4">
+                                <label class="text-[10px] font-black text-primary uppercase tracking-widest">Headers</label>
+                                <input id="h-l" class="forge-input text-sm" placeholder="LEFT_HEADER" />
+                                <input id="h-c" class="forge-input text-sm" placeholder="CENTER_HEADER" />
+                                <input id="h-r" class="forge-input text-sm" placeholder="RIGHT_HEADER" />
+                            </div>
+                            <div class="space-y-4">
+                                <label class="text-[10px] font-black text-primary uppercase tracking-widest">Footers</label>
+                                <input id="f-l" class="forge-input text-sm" placeholder="LEFT_FOOTER" />
+                                <input id="f-c" class="forge-input text-sm" placeholder="CENTER_FOOTER" />
+                                <input id="f-r" class="forge-input text-sm" placeholder="RIGHT_FOOTER" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-8 border-t border-border pt-8">
+                            <div class="space-y-4">
+                                <label class="text-[10px] font-black text-primary uppercase tracking-widest">Page Numbering</label>
+                                <div class="flex items-center gap-3 cursor-pointer">
+                                    <input type="checkbox" id="pg-en" checked class="w-5 h-5 accent-primary bg-black border-border rounded" />
+                                    <span class="font-bold text-white text-sm">ENABLE_INJECTOR</span>
+                                </div>
+                                <select id="pg-pos" class="forge-input text-xs">
+                                    <option value="footer-center">BOTTOM_CENTER</option>
+                                    <option value="footer-left">BOTTOM_LEFT</option>
+                                    <option value="footer-right">BOTTOM_RIGHT</option>
+                                    <option value="header-center">TOP_CENTER</option>
+                                    <option value="header-left">TOP_LEFT</option>
+                                    <option value="header-right">TOP_RIGHT</option>
+                                </select>
+                            </div>
+                            <div class="space-y-4">
+                                <label class="text-[10px] font-black text-primary uppercase tracking-widest">Sequence Configuration</label>
+                                <input type="number" id="pg-start" class="forge-input text-sm" placeholder="START_AT_PAGE" value="1" />
+                                <select id="pg-fmt" class="forge-input text-xs">
+                                    <option value="numeric">NUMERIC (1, 2, 3)</option>
+                                    <option value="roman_upper">ROMAN_UPPER (I, II, III)</option>
+                                    <option value="roman_lower">ROMAN_LOWER (i, ii, iii)</option>
+                                    <option value="alpha_upper">ALPHA_UPPER (A, B, C)</option>
+                                    <option value="page_x">PAGE_X (Page 1)</option>
+                                    <option value="page_x_of_n">PAGE_X_OF_N (Page 1 of 5)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button class="w-full btn-forge py-6 text-xl justify-center mt-4" id="hf-btn" onclick="executeHFForge()">
+                            <span>START_PRODUCTION_FORGE</span> <i class="fas fa-hammer"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="hf-results" class="grid md:grid-cols-2 gap-6 pt-10"></div>
+            </section>
+
+        </div>
+    </main>
+
+    <script>
+        let selectedFmt = 'html';
+        function switchView(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('view-' + id).classList.remove('hidden');
+            const nav = document.getElementById('nav-' + id); if (nav) nav.classList.add('active');
+            document.querySelector('.main-content').scrollTop = 0;
+        }
+
+        function onFilesSelected(input) { if (input.files.length > 0) { document.getElementById('pdf-queue').classList.remove('hidden'); document.getElementById('pdf-count').innerText = (input.files.length < 10 ? '0' : '') + input.files.length + ' Files Ready'; } }
+
+        async function executePDFExtraction() {
+            const input = document.getElementById('pdf-input'); const results = document.getElementById('pdf-results'); const btn = document.getElementById('pdf-btn');
+            btn.disabled = true; btn.innerText = 'EXTRACTING...'; results.innerHTML = '';
+            for (const f of input.files) {
+                const fd = new FormData(); fd.append('file', f);
+                try {
+                    const upRes = await fetch('/upload_and_analyze', { method: 'POST', body: fd });
+                    const up = await upRes.json();
+                    const exFd = new FormData(); exFd.append('serverFilename', up.serverFilename);
+                    const exRes = await fetch('/extract_highlights', { method: 'POST', body: exFd });
+                    if(!exRes.ok) { 
+                        const err = await exRes.json();
+                        results.innerHTML += `<div class="p-8 bg-red-500/5 border border-red-500/20 rounded-3xl text-red-400"><h4 class="font-black text-lg mb-2">${f.name}</h4><p class="font-mono text-xs uppercase tracking-widest">${err.error}</p></div>`;
+                        continue;
+                    }
+                    const ex = await exRes.json();
+                    results.innerHTML += `
+                        <div class="feature-card flex flex-col md:flex-row gap-10 items-center">
+                            <div class="flex-1 w-full space-y-6">
+                                <h4 class="text-2xl font-black text-white truncate">${f.name}</h4>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="p-4 bg-surface rounded-xl border border-border"><p class="text-2xl font-black text-primary">${ex.finalStats.pages}</p><p class="text-[10px] font-black text-muted uppercase">Pages</p></div>
+                                    <div class="p-4 bg-surface rounded-xl border border-border"><p class="text-2xl font-black text-primary">${Math.round(ex.finalStats.size/1024)}</p><p class="text-[10px] font-black text-muted uppercase">Size_KB</p></div>
+                                </div>
+                                <div class="flex gap-4"><a href="${ex.previewUrl}?download=true" class="btn-forge flex-1 justify-center">SAVE_PDF</a><a href="${ex.docxUrl}?download=true" class="btn-forge bg-surface border border-border flex-1 justify-center">SAVE_DOCX</a></div>
+                            </div>
+                            <div class="w-full md:w-80 h-60 bg-black rounded-[2rem] overflow-hidden border border-border shadow-2xl"><iframe src="${ex.previewUrl}" class="w-full h-full border-0"></iframe></div>
+                        </div>`;
+                } catch(e) { console.error(e); }
+            }
+            btn.disabled = false; btn.innerText = 'EXEC_EXTRACTION';
+        }
+
+        function setFmt(f) { selectedFmt = f; document.querySelectorAll('.format-chip').forEach(c => c.classList.remove('active')); document.getElementById('fmt-' + (f==='html'?'html':f==='md-friendly'?'md':'cmp')).classList.add('active'); }
+        function onZipSelected(input) { if(input.files[0]) { document.getElementById('zip-label').innerText = input.files[0].name.toUpperCase(); document.getElementById('llm-result').classList.add('hidden'); } }
+        async function executeLLMCompile() {
+            const input = document.getElementById('zip-input'); const btn = document.getElementById('llm-btn'); if(!input.files[0]) return;
+            btn.disabled = true; btn.innerText = 'COMPILING...';
+            const fd = new FormData(); fd.append('file', input.files[0]); fd.append('outputFormat', selectedFmt);
+            try {
+                const res = await fetch('/generate_context', { method: 'POST', body: fd });
+                const data = await res.json();
+                if(data.error) { alert(data.error); return; }
+                document.getElementById('llm-result').classList.remove('hidden');
+                document.getElementById('llm-name').innerText = data.filename.toUpperCase();
+                document.getElementById('llm-download').href = data.downloadUrl;
+                document.getElementById('llm-preview').href = data.previewUrl;
+            } catch(e) { alert("Compilation Failed"); }
+            btn.disabled = false; btn.innerText = 'INITIALIZE_COMPILATION';
+        }
+
+        function onHFSelected(input) { const list = document.getElementById('hf-queue-list'); list.innerHTML = ''; for (const f of input.files) { list.innerHTML += `<div>>> MOUNTED: ${f.name}</div>`; } }
+        async function executeHFForge() {
+            const input = document.getElementById('hf-input'); const results = document.getElementById('hf-results'); const btn = document.getElementById('hf-btn');
+            if(input.files.length === 0) return;
+            btn.disabled = true; btn.innerText = 'FORGING...'; results.innerHTML = '';
+            const config = {
+                headerLeft: document.getElementById('h-l').value, headerCenter: document.getElementById('h-c').value, headerRight: document.getElementById('h-r').value,
+                footerLeft: document.getElementById('f-l').value, footerCenter: document.getElementById('f-c').value, footerRight: document.getElementById('f-r').value,
+                isPageNumEnabled: document.getElementById('pg-en').checked ? 'true' : 'false',
+                isHfEnabled: 'true',
+                pageNumPlacement: document.getElementById('pg-pos').value,
+                pageNumFormat: document.getElementById('pg-fmt').value,
+                startPageNum: document.getElementById('pg-start').value || '1'
+            };
+            for (const f of input.files) {
+                const fd = new FormData(); fd.append('file', f);
+                try {
+                    const upRes = await fetch('/upload_and_analyze', { method: 'POST', body: fd });
+                    const up = await upRes.json();
+                    let sName = up.serverFilename;
+                    if(f.name.endsWith('.ipynb')) {
+                        for(let i=0; i<30; i++) {
+                            const st = await (await fetch('/check_conversion_status/' + sName)).json();
+                            if(st.status === 'done') { sName = st.pdf_basename; break; }
+                            await new Promise(r => setTimeout(r, 1500));
+                        }
+                    }
+                    const exFd = new FormData(); exFd.append('serverFilename', sName); Object.keys(config).forEach(k => exFd.append(k, config[k]));
+                    const res = await (await fetch('/add_header_footer', { method: 'POST', body: exFd })).json();
+                    results.innerHTML += `<div class="p-8 bg-surface border border-border rounded-[2rem] flex justify-between items-center group hover:border-primary transition-colors"><div class="min-w-0"><p class="text-white font-black truncate text-base mb-1 uppercase font-mono">${f.name}</p><p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Sequence Finalized</p></div><a href="${res.previewUrl}?download=true" class="w-12 h-12 rounded-2xl bg-neutral-900 border border-border flex items-center justify-center text-white hover:bg-primary transition-all shadow-xl"><i class="fas fa-download"></i></a></div>`;
+                } catch(e) {}
+            }
+            btn.disabled = false; btn.innerText = 'START_PRODUCTION_FORGE';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /temp/
+Disallow: /check_conversion_status/
+Disallow: /upload_and_analyze
+Disallow: /get_page_count
+Disallow: /video_download
+Disallow: /proxy_merge_download
+Disallow: /proxy_download
+Disallow: /extract_highlights
+Disallow: /add_header_footer
+Disallow: /generate_context
