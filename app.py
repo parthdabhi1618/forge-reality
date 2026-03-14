@@ -1,3 +1,4 @@
+import matplotlib matplotlib.use("Agg")
 from flask import Flask, render_template, request, jsonify, send_from_directory, Response
 from flask_wtf.csrf import CSRFProtect
 import fitz
