@@ -116,7 +116,7 @@ http://localhost:5000
 
 ## Live Demo
 
-Coming soon
+https://finrisk-ai-sigma.vercel.app/
 
 ---
 
